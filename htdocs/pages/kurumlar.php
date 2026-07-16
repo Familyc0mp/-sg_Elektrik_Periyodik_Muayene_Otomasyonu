@@ -5,6 +5,23 @@ require_once '../includes/auth.php';
 
 requireLogin();
 
+// AJAX Endpoint: Get Next Kurum Kodu for a given il_kodu
+if (isset($_GET['action']) && $_GET['action'] === 'get_next_code') {
+    header('Content-Type: application/json');
+    $il_kodu = cleanInput($_GET['il_kodu'] ?? '01');
+    $stmt_max = $pdo->prepare("SELECT MAX(CAST(kurum_kodu AS UNSIGNED)) as max_code FROM institutions WHERE user_id = ? AND il_kodu = ?");
+    $stmt_max->execute([$_SESSION['user_id'], $il_kodu]);
+    $max_row = $stmt_max->fetch();
+    
+    $next_code = 1;
+    if ($max_row && $max_row['max_code'] !== null) {
+        $next_code = intval($max_row['max_code']) + 1;
+    }
+    $auto_kurum_kodu = str_pad($next_code, 3, '0', STR_PAD_LEFT);
+    echo json_encode(['next_code' => $auto_kurum_kodu]);
+    exit;
+}
+
 // Auto-add contract_pdf column if not exists
 try {
     $pdo->exec("ALTER TABLE institutions ADD COLUMN contract_pdf VARCHAR(255) DEFAULT NULL");
@@ -24,7 +41,7 @@ if (isset($_GET['delete'])) {
 $editMode = false;
 
 $next_code = 1;
-$stmt_max = $pdo->prepare("SELECT MAX(CAST(kurum_kodu AS UNSIGNED)) as max_code FROM institutions WHERE user_id = ?");
+$stmt_max = $pdo->prepare("SELECT MAX(CAST(kurum_kodu AS UNSIGNED)) as max_code FROM institutions WHERE user_id = ? AND il_kodu = '01'");
 $stmt_max->execute([$_SESSION['user_id']]);
 $max_row = $stmt_max->fetch();
 if ($max_row && $max_row['max_code'] !== null) {
@@ -73,6 +90,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("UPDATE institutions SET firma_adi=?, adresi=?, sgk_sicil_no=?, il_kodu=?, kurum_kodu=?, isg_katip_id=?, report_date=?, start_date=?, end_date=?, next_control_date=?, contract_pdf=? WHERE id=? AND user_id=?");
         $stmt->execute([$firma_adi, $adresi, $sgk_sicil_no, $il_kodu, $kurum_kodu, $isg_katip_id, $report_date, $start_date, $end_date, $next_control_date, $contract_pdf, $_POST['id'], $_SESSION['user_id']]);
     } else {
+        // Safe server-side generation of next code to prevent race conditions and duplicate keys
+        $stmt_max = $pdo->prepare("SELECT MAX(CAST(kurum_kodu AS UNSIGNED)) as max_code FROM institutions WHERE user_id = ? AND il_kodu = ?");
+        $stmt_max->execute([$_SESSION['user_id'], $il_kodu]);
+        $max_row = $stmt_max->fetch();
+        $next_code = 1;
+        if ($max_row && $max_row['max_code'] !== null) {
+            $next_code = intval($max_row['max_code']) + 1;
+        }
+        $kurum_kodu = str_pad($next_code, 3, '0', STR_PAD_LEFT);
+
         $stmt = $pdo->prepare("INSERT INTO institutions (user_id, firma_adi, adresi, sgk_sicil_no, il_kodu, kurum_kodu, isg_katip_id, report_date, start_date, end_date, next_control_date, contract_pdf) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$_SESSION['user_id'], $firma_adi, $adresi, $sgk_sicil_no, $il_kodu, $kurum_kodu, $isg_katip_id, $report_date, $start_date, $end_date, $next_control_date, $contract_pdf]);
     }
@@ -244,6 +271,31 @@ include '../includes/header.php';
 document.addEventListener('DOMContentLoaded', function() {
     const pdfLoader = document.getElementById('contract_pdf_loader');
     const statusMsg = document.getElementById('pdf_status_message');
+    const ilKoduInput = document.querySelector('input[name="il_kodu"]');
+    const kurumKoduInput = document.querySelector('input[name="kurum_kodu"]');
+    const isEditMode = <?php echo $editMode ? 'true' : 'false'; ?>;
+
+    // Dynamically update next institution code (kurum_kodu) based on selected province code (il_kodu)
+    function updateKurumKodu(ilKodu) {
+        if (isEditMode || !ilKodu) return;
+        fetch(`kurumlar.php?action=get_next_code&il_kodu=${encodeURIComponent(ilKodu)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.next_code) {
+                    kurumKoduInput.value = data.next_code;
+                }
+            })
+            .catch(err => console.error('Error fetching next code:', err));
+    }
+
+    if (ilKoduInput && kurumKoduInput && !isEditMode) {
+        ilKoduInput.addEventListener('input', function() {
+            updateKurumKodu(this.value);
+        });
+        ilKoduInput.addEventListener('change', function() {
+            updateKurumKodu(this.value);
+        });
+    }
     
     if (pdfLoader) {
         pdfLoader.addEventListener('change', function() {
@@ -295,6 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (data.city_code) {
                         document.querySelector('input[name="il_kodu"]').value = data.city_code;
+                        updateKurumKodu(data.city_code); // Update next code based on parsed city code
                     }
                     
                     if (data.firma_adi) {

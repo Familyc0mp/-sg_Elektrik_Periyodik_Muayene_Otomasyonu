@@ -56,7 +56,9 @@ CREATE TABLE IF NOT EXISTS institutions (
     start_date DATETIME,
     end_date DATETIME,
     next_control_date DATE,
+    contract_pdf VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_code (user_id, il_kodu, kurum_kodu),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -542,3 +544,262 @@ CREATE TABLE IF NOT EXISTS general_report_images (
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (report_id) REFERENCES general_reports(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================================
+-- 8. YENİ FORM VE BELGE TABLOLARI
+-- ============================================================
+
+-- Boyler Tankı Raporları
+CREATE TABLE IF NOT EXISTS `boyler_tanki_reports` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `kurum_id` INT NOT NULL,
+  `report_no` VARCHAR(100) DEFAULT NULL,
+  `report_date` DATE DEFAULT NULL,
+  `start_date` DATETIME DEFAULT NULL,
+  `end_date` DATETIME DEFAULT NULL,
+  `next_control_date` DATE DEFAULT NULL,
+  `isg_katip_id` VARCHAR(100) DEFAULT NULL,
+  `firma_adi_eki` VARCHAR(255) DEFAULT NULL,
+  `control_reason` VARCHAR(255) DEFAULT NULL,
+  `phone` VARCHAR(50) DEFAULT NULL,
+  `email` VARCHAR(100) DEFAULT NULL,
+  `mevzuat` VARCHAR(255) DEFAULT NULL,
+  `brand` VARCHAR(100) DEFAULT NULL,
+  `serial_no` VARCHAR(100) DEFAULT NULL,
+  `model` VARCHAR(100) DEFAULT NULL,
+  `operating_pressure` VARCHAR(50) DEFAULT NULL,
+  `production_year` VARCHAR(10) DEFAULT NULL,
+  `test_pressure` VARCHAR(50) DEFAULT NULL,
+  `capacity` VARCHAR(50) DEFAULT NULL,
+  `tank_donanimlari` TEXT DEFAULT NULL,
+  `inspection_results` TEXT DEFAULT NULL,
+  `hydrostatic_test` TEXT DEFAULT NULL,
+  `defects` TEXT DEFAULT NULL,
+  `result_text` TEXT DEFAULT NULL,
+  `result` VARCHAR(50) DEFAULT 'UYGUNDUR',
+  `authorized_person_id` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`kurum_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Genleşme Tankı Raporları
+CREATE TABLE IF NOT EXISTS `genlesme_tanki_reports` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `kurum_id` INT NOT NULL,
+  `report_no` VARCHAR(100) DEFAULT NULL,
+  `report_date` DATE DEFAULT NULL,
+  `start_date` DATETIME DEFAULT NULL,
+  `end_date` DATETIME DEFAULT NULL,
+  `next_control_date` DATE DEFAULT NULL,
+  `isg_katip_id` VARCHAR(100) DEFAULT NULL,
+  `firma_adi_eki` VARCHAR(255) DEFAULT NULL,
+  `control_reason` VARCHAR(255) DEFAULT NULL,
+  `phone` VARCHAR(50) DEFAULT NULL,
+  `email` VARCHAR(100) DEFAULT NULL,
+  `mevzuat` VARCHAR(255) DEFAULT NULL,
+  `brand` VARCHAR(100) DEFAULT NULL,
+  `serial_no` VARCHAR(100) DEFAULT NULL,
+  `model` VARCHAR(100) DEFAULT NULL,
+  `operating_pressure` VARCHAR(50) DEFAULT NULL,
+  `production_year` VARCHAR(10) DEFAULT NULL,
+  `test_pressure` VARCHAR(50) DEFAULT NULL,
+  `capacity` VARCHAR(50) DEFAULT NULL,
+  `tank_donanimlari` TEXT DEFAULT NULL,
+  `inspection_results` TEXT DEFAULT NULL,
+  `hydrostatic_test` TEXT DEFAULT NULL,
+  `defects` TEXT DEFAULT NULL,
+  `result_text` TEXT DEFAULT NULL,
+  `result` VARCHAR(50) DEFAULT 'UYGUNDUR',
+  `authorized_person_id` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`kurum_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Engelli Rampası Raporları
+CREATE TABLE IF NOT EXISTS `engelli_rampasi_reports` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `kurum_id` INT NOT NULL,
+  `report_no` VARCHAR(100) DEFAULT NULL,
+  `report_date` DATE DEFAULT NULL,
+  `start_date` DATETIME DEFAULT NULL,
+  `end_date` DATETIME DEFAULT NULL,
+  `next_control_date` DATE DEFAULT NULL,
+  `isg_katip_id` VARCHAR(100) DEFAULT NULL,
+  `firma_adi_eki` VARCHAR(255) DEFAULT NULL,
+  `control_reason` VARCHAR(255) DEFAULT NULL,
+  `report_text` TEXT DEFAULT NULL,
+  `result` VARCHAR(50) DEFAULT 'UYGUNDUR',
+  `authorized_person_id` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`kurum_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Kamera Bakım Raporları
+CREATE TABLE IF NOT EXISTS `kamera_bakim_reports` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `kurum_id` INT NOT NULL,
+  `report_no` VARCHAR(100) DEFAULT NULL,
+  `report_date` DATE DEFAULT NULL,
+  `start_date` DATETIME DEFAULT NULL,
+  `end_date` DATETIME DEFAULT NULL,
+  `next_control_date` DATE DEFAULT NULL,
+  `isg_katip_id` VARCHAR(100) DEFAULT NULL,
+  `firma_adi_eki` VARCHAR(255) DEFAULT NULL,
+  `control_reason` VARCHAR(255) DEFAULT NULL,
+  `yurt_yoneticisi` VARCHAR(255) DEFAULT NULL,
+  `report_text` TEXT DEFAULT NULL,
+  `result` VARCHAR(50) DEFAULT 'UYGUNDUR',
+  `authorized_person_id` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`kurum_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Jeneratör Raporları
+CREATE TABLE IF NOT EXISTS `jenarator_reports` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `kurum_id` INT NOT NULL,
+  `report_no` VARCHAR(100) DEFAULT NULL,
+  `report_date` DATE DEFAULT NULL,
+  `start_date` DATETIME DEFAULT NULL,
+  `end_date` DATETIME DEFAULT NULL,
+  `next_control_date` DATE DEFAULT NULL,
+  `isg_katip_id` VARCHAR(100) DEFAULT NULL,
+  `firma_adi_eki` VARCHAR(255) DEFAULT NULL,
+  `control_reason` VARCHAR(255) DEFAULT NULL,
+  `brand_model` VARCHAR(150) DEFAULT NULL,
+  `production_year` VARCHAR(10) DEFAULT NULL,
+  `capacity` VARCHAR(50) DEFAULT NULL,
+  `serial_no` VARCHAR(100) DEFAULT NULL,
+  `inspection_results` TEXT DEFAULT NULL,
+  `defects` TEXT DEFAULT NULL,
+  `notes` TEXT DEFAULT NULL,
+  `result_text` TEXT DEFAULT NULL,
+  `result` VARCHAR(50) DEFAULT 'UYGUNDUR',
+  `authorized_person_id` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`kurum_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Sıhhi Tesisat Raporları
+CREATE TABLE IF NOT EXISTS `sihhi_tesisat_reports` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `kurum_id` INT NOT NULL,
+  `report_no` VARCHAR(100) DEFAULT NULL,
+  `report_date` DATE DEFAULT NULL,
+  `start_date` DATETIME DEFAULT NULL,
+  `end_date` DATETIME DEFAULT NULL,
+  `next_control_date` DATE DEFAULT NULL,
+  `isg_katip_id` VARCHAR(100) DEFAULT NULL,
+  `firma_adi_eki` VARCHAR(255) DEFAULT NULL,
+  `control_reason` VARCHAR(255) DEFAULT NULL,
+  `kurum_yoneticisi` VARCHAR(255) DEFAULT NULL,
+  `kurum_kapasitesi` INT DEFAULT NULL,
+  `defects` TEXT DEFAULT NULL,
+  `notes` TEXT DEFAULT NULL,
+  `result` VARCHAR(50) DEFAULT 'UYGUNDUR',
+  `authorized_person_id` INT DEFAULT NULL,
+  `inspection_results` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`kurum_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Gaz Tesisatı Raporları
+CREATE TABLE IF NOT EXISTS `gaz_tesisat_reports` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `kurum_id` INT NOT NULL,
+  `report_no` VARCHAR(100) DEFAULT NULL,
+  `report_date` DATE DEFAULT NULL,
+  `start_date` DATETIME DEFAULT NULL,
+  `end_date` DATETIME DEFAULT NULL,
+  `next_control_date` DATE DEFAULT NULL,
+  `isg_katip_id` VARCHAR(100) DEFAULT NULL,
+  `firma_adi_eki` VARCHAR(255) DEFAULT NULL,
+  `control_reason` VARCHAR(255) DEFAULT NULL,
+  `kurum_yoneticisi` VARCHAR(255) DEFAULT NULL,
+  `kurum_kapasitesi` INT DEFAULT NULL,
+  `defects` TEXT DEFAULT NULL,
+  `notes` TEXT DEFAULT NULL,
+  `result` VARCHAR(50) DEFAULT 'UYGUNDUR',
+  `authorized_person_id` INT DEFAULT NULL,
+  `inspection_results` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`kurum_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Isınma Tesisatı Raporları
+CREATE TABLE IF NOT EXISTS `isinma_tesisat_reports` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `kurum_id` INT NOT NULL,
+  `report_no` VARCHAR(100) DEFAULT NULL,
+  `report_date` DATE DEFAULT NULL,
+  `start_date` DATETIME DEFAULT NULL,
+  `end_date` DATETIME DEFAULT NULL,
+  `next_control_date` DATE DEFAULT NULL,
+  `isg_katip_id` VARCHAR(100) DEFAULT NULL,
+  `firma_adi_eki` VARCHAR(255) DEFAULT NULL,
+  `control_reason` VARCHAR(255) DEFAULT NULL,
+  `kurum_yoneticisi` VARCHAR(255) DEFAULT NULL,
+  `kurum_kapasitesi` INT DEFAULT NULL,
+  `defects` TEXT DEFAULT NULL,
+  `notes` TEXT DEFAULT NULL,
+  `result` VARCHAR(50) DEFAULT 'UYGUNDUR',
+  `authorized_person_id` INT DEFAULT NULL,
+  `inspection_results` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`kurum_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Yangın Tesisatı Raporları
+CREATE TABLE IF NOT EXISTS `yangin_tesisat_reports` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `kurum_id` INT NOT NULL,
+  `report_no` VARCHAR(100) DEFAULT NULL,
+  `report_date` DATE DEFAULT NULL,
+  `start_date` DATETIME DEFAULT NULL,
+  `end_date` DATETIME DEFAULT NULL,
+  `next_control_date` DATE DEFAULT NULL,
+  `isg_katip_id` VARCHAR(100) DEFAULT NULL,
+  `firma_adi_eki` VARCHAR(255) DEFAULT NULL,
+  `control_reason` VARCHAR(255) DEFAULT NULL,
+  `kurum_yoneticisi` VARCHAR(255) DEFAULT NULL,
+  `kurum_kapasitesi` INT DEFAULT NULL,
+  `defects` TEXT DEFAULT NULL,
+  `notes` TEXT DEFAULT NULL,
+  `result` VARCHAR(50) DEFAULT 'UYGUNDUR',
+  `authorized_person_id` INT DEFAULT NULL,
+  `inspection_results` TEXT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`kurum_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Firma Belgeleri
+CREATE TABLE IF NOT EXISTS `company_documents` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `title` VARCHAR(255) NOT NULL,
+  `filename` VARCHAR(255) NOT NULL,
+  `file_size` INT NOT NULL,
+  `uploaded_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Yetkili Kişi Belgeleri
+CREATE TABLE IF NOT EXISTS `authorized_person_documents` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `person_id` INT NOT NULL,
+  `title` VARCHAR(255) NOT NULL,
+  `filename` VARCHAR(255) NOT NULL,
+  `file_size` INT NOT NULL,
+  `uploaded_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`person_id`) REFERENCES `authorized_persons` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Cihaz Kalibrasyon Belgeleri
+CREATE TABLE IF NOT EXISTS `device_calibration_documents` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `device_id` INT NOT NULL,
+  `title` VARCHAR(255) NOT NULL,
+  `filename` VARCHAR(255) NOT NULL,
+  `file_size` INT NOT NULL,
+  `uploaded_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`device_id`) REFERENCES `measurement_devices` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
