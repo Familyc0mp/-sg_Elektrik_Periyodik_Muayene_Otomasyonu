@@ -46,16 +46,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $default_device_id = !empty($_POST['default_device_id']) ? intval($_POST['default_device_id']) : null;
     $default_thermal_device_id = !empty($_POST['default_thermal_device_id']) ? intval($_POST['default_thermal_device_id']) : null;
 
-    // New: Update Institution Start/End Dates (Defaults)
+    // New: Update Institution Start/End Dates (Defaults) and ISG-KATIP ID
     $start_date = !empty($_POST['start_date']) ? $_POST['start_date'] : null;
     $end_date = !empty($_POST['end_date']) ? $_POST['end_date'] : null;
 
-    if ($start_date || $end_date) {
-        $formatted_start = $start_date ? date('Y-m-d H:i:s', strtotime($start_date)) : null;
-        $formatted_end = $end_date ? date('Y-m-d H:i:s', strtotime($end_date)) : null;
-        $stmt = $pdo->prepare("UPDATE institutions SET start_date=?, end_date=? WHERE id=?");
-        $stmt->execute([$formatted_start, $formatted_end, $kurum_id]);
-    }
+    $formatted_start = $start_date ? date('Y-m-d H:i:s', strtotime($start_date)) : null;
+    $formatted_end = $end_date ? date('Y-m-d H:i:s', strtotime($end_date)) : null;
+    $stmt = $pdo->prepare("UPDATE institutions SET start_date=?, end_date=?, isg_katip_id=? WHERE id=?");
+    $stmt->execute([$formatted_start, $formatted_end, $sozlesme_id, $kurum_id]);
 
     // Check if record exists
     $stmt = $pdo->prepare("SELECT id FROM facility_info WHERE kurum_id = ?");
@@ -127,7 +125,7 @@ $stmt->execute([$kurum_id]);
 $info = $stmt->fetch();
 
 // Fetch institution defaults
-$stmt = $pdo->prepare("SELECT start_date, end_date FROM institutions WHERE id = ?");
+$stmt = $pdo->prepare("SELECT start_date, end_date, isg_katip_id FROM institutions WHERE id = ?");
 $stmt->execute([$kurum_id]);
 $kurum_defaults = $stmt->fetch() ?: [];
 
@@ -141,7 +139,7 @@ if (!$info) {
         'sema_var_mi' => 0,
         'yapi_cinsi' => '',
         'kullanim_amaci' => '',
-        'sozlesme_id' => '',
+        'sozlesme_id' => $kurum_defaults['isg_katip_id'] ?? '',
         'son_kontrol_tarihi' => '',
         'weather_condition' => '',
         'ground_moisture' => '',
@@ -154,6 +152,9 @@ if (!$info) {
     ];
     $warning_msg = "Bilgilerin tamamlanması beklenmektedir.";
 } else {
+    if (empty($info['sozlesme_id']) && !empty($kurum_defaults['isg_katip_id'])) {
+        $info['sozlesme_id'] = $kurum_defaults['isg_katip_id'];
+    }
     // Check completion (simple check for empty fields)
     if (empty($info['enerji_saglayan']) || empty($info['sebeke_tipi'])) {
         $warning_msg = "Bilgilerin tamamlanması beklenmektedir.";

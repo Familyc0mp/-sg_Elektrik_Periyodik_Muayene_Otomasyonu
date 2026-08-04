@@ -580,7 +580,6 @@ function renderHeader()
                                 <td><?php echo htmlspecialchars($data['kayit_no'] ?? ''); ?></td>
                             </tr>
                         </table>
-                        <div class="small-text">Bu rapor.......... (yazı (rakam)) nüsha olarak hazırlanmıştır.</div>
                     </div>
                 </td>
             </tr>

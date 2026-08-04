@@ -51,8 +51,12 @@ function deleteInstitutionCascade($pdo, $kurum_id, $user_id) {
     ];
     
     foreach ($child_deletes as $sql) {
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$kurum_id]);
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$kurum_id]);
+        } catch (PDOException $e) {
+            // Ignore missing tables or schema mismatches
+        }
     }
     
     // 2. Report tables
@@ -76,13 +80,21 @@ function deleteInstitutionCascade($pdo, $kurum_id, $user_id) {
     ];
     
     foreach ($report_tables as $table) {
-        $stmt = $pdo->prepare("DELETE FROM {$table} WHERE kurum_id = ?");
-        $stmt->execute([$kurum_id]);
+        try {
+            $stmt = $pdo->prepare("DELETE FROM {$table} WHERE kurum_id = ?");
+            $stmt->execute([$kurum_id]);
+        } catch (PDOException $e) {
+            // Ignore missing tables or schema mismatches
+        }
     }
     
     // 3. Delete institution
-    $stmt = $pdo->prepare("DELETE FROM institutions WHERE id = ? AND user_id = ?");
-    $stmt->execute([$kurum_id, $user_id]);
+    try {
+        $stmt = $pdo->prepare("DELETE FROM institutions WHERE id = ? AND user_id = ?");
+        $stmt->execute([$kurum_id, $user_id]);
+    } catch (PDOException $e) {
+        // Ignore errors
+    }
 }
 
 // Handle Delete
@@ -246,17 +258,15 @@ include '../includes/header.php';
                         <input type="date" class="form-control" name="report_date"
                             value="<?php echo $institution['report_date']; ?>">
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Başlangıç Tarih/Saat</label>
-                            <input type="datetime-local" class="form-control" name="start_date"
-                                value="<?php echo $institution['start_date'] ? date('Y-m-d\TH:i', strtotime($institution['start_date'])) : ''; ?>">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Bitiş Tarih/Saat</label>
-                            <input type="datetime-local" class="form-control" name="end_date"
-                                value="<?php echo $institution['end_date'] ? date('Y-m-d\TH:i', strtotime($institution['end_date'])) : ''; ?>">
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">Başlangıç Tarih/Saat</label>
+                        <input type="datetime-local" class="form-control" name="start_date"
+                            value="<?php echo $institution['start_date'] ? date('Y-m-d\TH:i', strtotime($institution['start_date'])) : ''; ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bitiş Tarih/Saat</label>
+                        <input type="datetime-local" class="form-control" name="end_date"
+                            value="<?php echo $institution['end_date'] ? date('Y-m-d\TH:i', strtotime($institution['end_date'])) : ''; ?>">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Bir Sonraki Periyodik Kontrol Tarihi</label>

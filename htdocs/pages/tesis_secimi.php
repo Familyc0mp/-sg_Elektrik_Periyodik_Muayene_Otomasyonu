@@ -36,8 +36,12 @@ function deleteInstitutionCascade($pdo, $kurum_id, $user_id) {
     ];
     
     foreach ($child_deletes as $sql) {
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$kurum_id]);
+        try {
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$kurum_id]);
+        } catch (PDOException $e) {
+            // Ignore missing tables or schema mismatches
+        }
     }
     
     // 2. Report tables
@@ -61,13 +65,21 @@ function deleteInstitutionCascade($pdo, $kurum_id, $user_id) {
     ];
     
     foreach ($report_tables as $table) {
-        $stmt = $pdo->prepare("DELETE FROM {$table} WHERE kurum_id = ?");
-        $stmt->execute([$kurum_id]);
+        try {
+            $stmt = $pdo->prepare("DELETE FROM {$table} WHERE kurum_id = ?");
+            $stmt->execute([$kurum_id]);
+        } catch (PDOException $e) {
+            // Ignore missing tables or schema mismatches
+        }
     }
     
     // 3. Delete institution
-    $stmt = $pdo->prepare("DELETE FROM institutions WHERE id = ? AND user_id = ?");
-    $stmt->execute([$kurum_id, $user_id]);
+    try {
+        $stmt = $pdo->prepare("DELETE FROM institutions WHERE id = ? AND user_id = ?");
+        $stmt->execute([$kurum_id, $user_id]);
+    } catch (PDOException $e) {
+        // Ignore errors
+    }
 }
 
 // Handle Selection
@@ -104,6 +116,34 @@ if (isset($_POST['bulk_delete']) && isset($_POST['selected_institutions'])) {
     redirect('tesis_secimi.php');
 }
 
+// Fetch all institutions that have at least one report in any of the report tables
+$inst_with_reports = [];
+try {
+    $union_sql = "
+        SELECT DISTINCT kurum_id FROM (
+            SELECT kurum_id FROM boyler_tanki_reports
+            UNION SELECT kurum_id FROM engelli_rampasi_reports
+            UNION SELECT kurum_id FROM facility_info
+            UNION SELECT kurum_id FROM fire_detection_reports
+            UNION SELECT kurum_id FROM gaz_tesisat_reports
+            UNION SELECT kurum_id FROM general_reports
+            UNION SELECT kurum_id FROM genlesme_tanki_reports
+            UNION SELECT kurum_id FROM grounding_reports
+            UNION SELECT kurum_id FROM internal_installation_reports
+            UNION SELECT kurum_id FROM isinma_tesisat_reports
+            UNION SELECT kurum_id FROM jenarator_reports
+            UNION SELECT kurum_id FROM kamera_bakim_reports
+            UNION SELECT kurum_id FROM katodik_koruma_reports
+            UNION SELECT kurum_id FROM lightning_protection_reports
+            UNION SELECT kurum_id FROM sihhi_tesisat_reports
+            UNION SELECT kurum_id FROM yangin_tesisat_reports
+        ) AS combined_reports WHERE kurum_id IS NOT NULL";
+    $stmt_union = $pdo->query($union_sql);
+    $inst_with_reports = $stmt_union->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    // If some table doesn't exist yet, catch silently
+}
+
 include '../includes/header.php';
 ?>
 
@@ -129,9 +169,14 @@ include '../includes/header.php';
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span>Kurum Listesi</span>
-                    <button type="submit" name="bulk_delete" class="btn btn-sm btn-danger shadow-sm" id="btnBulkDelete" style="display: none;" onclick="return confirm('Seçilen kurumları ve onlara ait tüm periyodik kontrol raporlarını kalıcı olarak silmek istediğinize emin misiniz?')">
-                        <i class="fas fa-trash-alt me-1"></i> Seçilenleri Sil (<span id="selectedCount">0</span>)
-                    </button>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary me-2 shadow-sm" id="btnSelectNoReports">
+                            <i class="fas fa-folder-open me-1"></i> Raporu Olmayanları Seç
+                        </button>
+                        <button type="submit" name="bulk_delete" class="btn btn-sm btn-danger shadow-sm" id="btnBulkDelete" style="display: none;" onclick="return confirm('Seçilen kurumları ve onlara ait tüm periyodik kontrol raporlarını kalıcı olarak silmek istediğinize emin misiniz?')">
+                            <i class="fas fa-trash-alt me-1"></i> Seçilenleri Sil (<span id="selectedCount">0</span>)
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -161,7 +206,7 @@ include '../includes/header.php';
                                     ?>
                                     <tr class="<?php echo $isActive ? 'table-success' : ''; ?>">
                                         <td>
-                                            <input type="checkbox" class="form-check-input institution-checkbox" name="selected_institutions[]" value="<?php echo $row['id']; ?>">
+                                            <input type="checkbox" class="form-check-input institution-checkbox" name="selected_institutions[]" value="<?php echo $row['id']; ?>" data-has-reports="<?php echo in_array($row['id'], $inst_with_reports) ? 'true' : 'false'; ?>">
                                         </td>
                                         <td>
                                             <?php echo $row['il_kodu'] . '-' . $row['kurum_kodu']; ?>
@@ -288,6 +333,21 @@ function initTesisSecimiPage() {
         checkboxes.forEach(cb => {
             cb.addEventListener('change', updateBulkDeleteButton);
         });
+
+        const btnSelectNoReports = document.getElementById('btnSelectNoReports');
+        if (btnSelectNoReports) {
+            btnSelectNoReports.addEventListener('click', function() {
+                checkboxes.forEach(cb => {
+                    const row = cb.closest('tr');
+                    if (row && row.style.display !== 'none' && cb.getAttribute('data-has-reports') === 'false') {
+                        cb.checked = true;
+                    } else {
+                        cb.checked = false;
+                    }
+                });
+                updateBulkDeleteButton();
+            });
+        }
     }
 
     // Client-side Column Sorting logic
